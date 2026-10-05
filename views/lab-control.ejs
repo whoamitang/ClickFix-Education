@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lab control</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="edu-banner lab">Lab control — local only</div>
+
+  <main class="card lab-card">
+    <h1 class="title">Session control</h1>
+    <p class="subtitle">Session: <code><%= state.sessionId %></code></p>
+
+    <div class="state-readout">
+      <span class="state-label">Current state</span>
+      <span class="state-value" id="stateValue"><%= state.state %></span>
+    </div>
+
+    <div class="lab-actions">
+      <button class="btn btn-primary" id="btnEstablish">Establish simulated connection</button>
+      <button class="btn btn-secondary" id="btnReset">Reset</button>
+    </div>
+
+    <p class="edu-note">State held in memory. Binding 127.0.0.1 only.</p>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const stateValue = document.getElementById('stateValue');
+    const btnEstablish = document.getElementById('btnEstablish');
+    const btnReset = document.getElementById('btnReset');
+
+    btnEstablish.addEventListener('click', async () => {
+      await fetch('/lab-control/establish', { method: 'POST' });
+    });
+
+    btnReset.addEventListener('click', async () => {
+      await fetch('/lab-control/reset', { method: 'POST' });
+    });
+
+    const socket = io();
+    socket.on('state', (s) => {
+      stateValue.textContent = s.state;
+    });
+  </script>
+</body>
+</html>

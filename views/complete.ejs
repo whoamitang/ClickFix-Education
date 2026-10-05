@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verification completed</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="edu-banner">Educational simulation</div>
+
+  <main class="card complete-card">
+    <% if (state.state === 'connected') { %>
+      <div class="check-badge" aria-hidden="true">
+        <svg viewBox="0 0 52 52" class="check-svg">
+          <circle class="check-circle" cx="26" cy="26" r="24" fill="none" />
+          <path class="check-mark" fill="none" d="M14 27 l8 8 l16 -18" />
+        </svg>
+      </div>
+
+      <h1 class="title">Verification completed</h1>
+      <p class="subtitle">You may now continue.</p>
+
+      <div class="status-line">
+        <span class="dot"></span>
+        <span>Session <%= state.sessionId %> verified</span>
+      </div>
+
+      <p class="edu-note">This page is a simulation. Nothing was executed.</p>
+    <% } else { %>
+      <h1 class="title">Not available</h1>
+      <p class="subtitle">This page is not reachable in the current session state.</p>
+      <p class="edu-note">Educational simulation.</p>
+    <% } %>
+  </main>
+</body>
+</html>

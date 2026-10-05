@@ -1,0 +1,4 @@
+node_modules/
+payload.exe
+*.exe
+.env

