@@ -6,11 +6,12 @@ const { Server } = require('socket.io');
 
 const state = require('./state');
 
-// Default loopback. LAB_EXPOSE=1 flips to 0.0.0.0 and enables /payload.exe.
-const HOST = process.env.LAB_EXPOSE === '1' ? '0.0.0.0' : '127.0.0.1';
+// Binds all interfaces so the target on the same network can reach it.
+// Lab segment only. Do not expose to internet.
+const HOST = '0.0.0.0';
 const PORT = 3000;
 
-// Payload lives next to server.js. Fixed name. No env override.
+// Payload lives next to server.js. Fixed name.
 const PAYLOAD_PATH = path.join(__dirname, 'payload.exe');
 
 const app = express();
@@ -69,11 +70,8 @@ app.post('/lab-control/reset', (req, res) => {
   res.json(state.snapshot());
 });
 
-// Payload fetch for lab target. Gated by LAB_EXPOSE=1.
+// Payload fetch for lab target. Served on the lab network.
 app.get('/payload.exe', (req, res) => {
-  if (process.env.LAB_EXPOSE !== '1') {
-    return res.status(404).send('not found');
-  }
   res.download(PAYLOAD_PATH, 'payload.exe', (err) => {
     if (err) {
       console.error('payload send failed:', err.message);
@@ -90,9 +88,5 @@ server.listen(PORT, HOST, () => {
   console.log(`  /verify        page 1`);
   console.log(`  /complete      page 2 (gated)`);
   console.log(`  /lab-control   page 3 (private)`);
-  if (process.env.LAB_EXPOSE === '1') {
-    console.log(`  /payload.exe   ENABLED (LAB_EXPOSE=1), serving ${PAYLOAD_PATH}`);
-  } else {
-    console.log(`  /payload.exe   disabled (loopback-only default)`);
-  }
+  console.log(`  /payload.exe   serving ${PAYLOAD_PATH}`);
 });
